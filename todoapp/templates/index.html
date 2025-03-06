@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+    <!-- Navbar Section -->
+    <header class="bg-blue-700 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <span class="text-xl font-semibold">{{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="text-sm hover:underline">Logout</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-6">
+
+        <!-- Heading -->
+        <h1 class="text-4xl font-bold text-center text-blue-600 mb-8">My Todo App</h1>
+
+        <!-- Create Task Form -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Create Task</h3>
+            <form action="{% url 'create_todo' %}" method="post" class="space-y-4">
+                {% csrf_token %}
+                <div class="flex flex-col">
+                    <label for="title" class="text-lg font-medium mb-2 text-gray-700">Task Title</label>
+                    <input type="text" name="title" id="title" placeholder="Enter task title"
+                        class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600">
+                </div>
+                <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                    <i class="fas fa-plus-circle mr-2"></i> Add Task
+                </button>
+            </form>
+        </div>
+
+        <hr class="my-8">
+
+        <!-- Task List Table -->
+        <h3 class="text-2xl font-semibold mb-4 text-gray-800">Task List</h3>
+        <table class="min-w-full bg-white rounded-lg shadow-lg border-separate border-spacing-0">
+            <thead class="bg-blue-600 text-white">
+                <tr>
+                    <th class="py-3 px-4 text-left">Added</th>
+                    <th class="py-3 px-4 text-left">Title</th>
+                    <th class="py-3 px-4 text-left">Status</th>
+                    <th class="py-3 px-4 text-left">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks reversed %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-4">{{ task.created_at|timesince }}</td>
+                    <td class="py-3 px-4">{{ task.title }}</td>
+                    <td class="py-3 px-4">
+                        <input type="checkbox" name="completed" id="{{ task.id }}" {% if task.completed %}checked{% endif %}
+                            class="cursor-pointer transition duration-300 transform hover:scale-110">
+                    </td>
+                    <td class="py-3 px-4">
+                        <a href="{% url 'update_todo' task.id %}" class="text-blue-600 hover:underline">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'delete_todo' task.id %}" class="text-red-600 hover:underline ml-4">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const csrfToken = document.cookie.split('=')[1];
+        const allCheckBoxes = document.querySelectorAll("input[type='checkbox']");
+
+        allCheckBoxes.forEach(checkbox => checkbox.addEventListener('change', markCompleted));
+
+        function markCompleted(e) {
+            const id = e.target.id;
+            const checked = e.target.checked;
+
+            fetch(`/edit/${id}`, {
+                method: 'POST',
+                headers: {
+                    "X-CSRFTOKEN": csrfToken
+                },
+                body: new URLSearchParams({"completed": checked && 'on'}),
+            });
+        }
+    </script>
+
+</body>
+
+</html>
